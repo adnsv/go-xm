@@ -72,7 +72,7 @@ func ExampleWriter() {
 
 		// low level printing
 		Tag("div", func(p Printer) {
-			p.Content(nil)
+			p.Content(nil) // start new line
 			p.Linebreak()
 			p.Content(RawCont("direct raw writing with higher performance"))
 			p.OTag("p")
@@ -81,7 +81,7 @@ func ExampleWriter() {
 			p.Content(RawCont("<![CDATA[...]]>"))
 			p.Linebreak()
 			p.Content(ScrambleCont("make sure you pair OTag/CTag calls\nand avoid writing <things> that do not comply with XML syntax"))
-			p.StopInline()
+			p.StopInline() // make sure the following block level closing tag is indented and aligned nicely
 		}),
 	)
 
