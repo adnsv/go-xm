@@ -63,7 +63,7 @@ type Writer interface {
 // NewWriter wraps Printer p providing TagWriter API. Notice, that for a valid
 // XML document, you will need to write exactly one tag into it that becomes the
 // root.
-func NewWriter(p Printer) TagWriter {
+func NewWriter(p Printer) Writer {
 	return &writer_impl{p: p}
 }
 
