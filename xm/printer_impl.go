@@ -144,10 +144,16 @@ func (p *printer_impl) CTag() {
 		p.block_level--
 	}
 
+	pop_stack := func() {
+		p.names = p.names[:stack_len-1]
+	}
+
 	if p.in_tag {
 		p.in_tag = false
 		p.put([]byte("/>"))
+		pop_stack()
 	} else {
+		pop_stack()
 		if !was_inline {
 			p.putIndent()
 		}
@@ -156,7 +162,6 @@ func (p *printer_impl) CTag() {
 		p.put([]byte{'>'})
 	}
 
-	p.names = p.names[:stack_len-1]
 }
 
 const (
