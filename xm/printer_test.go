@@ -61,6 +61,16 @@ func ExamplePrinter() {
 	p.Content(RawCont("line breaks must\nalign nicely with additional\nindentation that matches parent's\nblock level"))
 	p.CTag()
 
+	p.OTag("style")
+	p.Content(RawCont(`
+path {
+	stroke-width: 3;
+	stroke: black;
+	fill: rgba(0, 0, 0, 0);
+}
+`))
+	p.CTag()
+
 	p.CTag() // root
 
 	fmt.Println(buf.String())
@@ -80,6 +90,12 @@ func ExamplePrinter() {
 	//     align nicely with additional
 	//     indentation that matches parent's
 	//     block level</p>
+	//   <style>
+	//     path {
+	//     	stroke-width: 3;
+	//     	stroke: black;
+	//     	fill: rgba(0, 0, 0, 0);
+	//     }
+	//   </style>
 	// </root>
-
 }

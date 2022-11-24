@@ -11,9 +11,16 @@ type printer_impl struct {
 	inline_level int
 	inline_mode  bool
 	in_tag       bool
+	eols         int
 	indent       IndentStyle
 	flags        PrinterFlags
 	on_tag_kind  func(n string) TagKind
+}
+
+func (p *printer_impl) ln(n int) {
+	if n > p.eols {
+		p.eols = n
+	}
 }
 
 func (p *printer_impl) BOM() {
@@ -25,6 +32,7 @@ func (p *printer_impl) XmlDecl() {
 		panic("xml writer: invalid XmlDecl placement")
 	}
 	p.put([]byte("<?xml version='1.0' encoding='UTF-8'?>\n"))
+	p.eols = 1
 }
 
 func (p *printer_impl) Content(s RawCont) {
@@ -32,10 +40,11 @@ func (p *printer_impl) Content(s RawCont) {
 		p.in_tag = false
 		p.put([]byte(">"))
 	} else if !p.inline_mode {
-		p.putIndent()
+		p.ln(1)
 	}
 	p.inline_mode = true
 
+	p.putIndent()
 	if p.flags&PreserveInlineWhitespace != 0 || p.indent == IndentNone {
 		p.put(s)
 	} else {
@@ -47,27 +56,31 @@ func (p *printer_impl) Content(s RawCont) {
 		}
 		for {
 			line := s[:i]
+			p.putIndent()
 			p.put(line)
 			s = s[i+1:]
 			i = bytes.IndexByte(s, '\n')
 			if i < 0 {
-				p.putIndent()
+				p.ln(1)
 				break
 			} else if i == 0 {
 				// a special handler for '\n\n' sequences to avoid generating
 				// empty lines that only have spaces or tabs before the next '\n'
 				p.put([]byte{'\n'})
 			} else {
-				p.putIndent()
+				p.ln(1)
 			}
 		}
-		p.put(s)
+		if len(s) > 0 {
+			p.putIndent()
+			p.put(s)
+		}
 	}
 }
 
 func (p *printer_impl) Linebreak() {
 	if p.flags&PreserveInlineWhitespace == 0 {
-		p.putIndent()
+		p.ln(1)
 	} else {
 		p.put([]byte{'\n'})
 	}
@@ -106,18 +119,19 @@ func (p *printer_impl) OTag(name string) {
 		if p.inline_mode || was_in_tag {
 			p.inline_level++
 		} else {
-			p.putIndent()
+			p.ln(1)
 			p.inline_mode = true
 			p.inline_level++
 		}
+		p.putIndent()
 	} else { // block tag
 		if p.inline_mode {
 			p.inline_mode = false
 		}
+		p.ln(1)
 		p.putIndent()
 		p.block_level++
 	}
-
 	p.put([]byte{'<'})
 	p.put([]byte(name))
 	p.in_tag = true
@@ -151,16 +165,16 @@ func (p *printer_impl) CTag() {
 	if p.in_tag {
 		p.in_tag = false
 		p.put([]byte("/>"))
-		pop_stack()
 	} else {
-		pop_stack()
 		if !was_inline {
-			p.putIndent()
+			p.ln(1)
 		}
+		p.putIndent()
 		p.put([]byte("</"))
 		p.put([]byte(name))
 		p.put([]byte{'>'})
 	}
+	pop_stack()
 
 }
 
@@ -171,12 +185,17 @@ const (
 )
 
 func (p *printer_impl) putIndent() {
-	if p.indent == IndentNone {
+	if p.indent == IndentNone || p.eols == 0 {
 		return
 	}
-	if len(p.names) > 0 {
-		p.put([]byte{'\n'})
+
+	for p.eols > 8 {
+		p.put([]byte(eols_8))
+		p.eols -= 8
 	}
+	p.put([]byte(eols_8[:p.eols]))
+	p.eols = 0
+
 	if p.indent == IndentTabs {
 		n := p.block_level
 		for n > 8 {
