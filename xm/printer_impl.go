@@ -95,7 +95,6 @@ func (p *printer_impl) OTag(name string) {
 		panic("xml writer: trying to write a tag with empty name")
 	}
 	k := p.kindOf(name)
-	p.names = append(p.names, name)
 
 	was_in_tag := p.in_tag
 	if p.in_tag {
@@ -122,6 +121,7 @@ func (p *printer_impl) OTag(name string) {
 	p.put([]byte{'<'})
 	p.put([]byte(name))
 	p.in_tag = true
+	p.names = append(p.names, name)
 }
 
 func (p *printer_impl) CTag() {
