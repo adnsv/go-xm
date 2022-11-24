@@ -31,8 +31,8 @@ func (p *printer_impl) XmlDecl() {
 	if len(p.names) > 0 {
 		panic("xml writer: invalid XmlDecl placement")
 	}
-	p.put([]byte("<?xml version='1.0' encoding='UTF-8'?>\n"))
-	p.eols = 1
+	p.put([]byte("<?xml version='1.0' encoding='UTF-8'?>"))
+	p.ln(1)
 }
 
 func (p *printer_impl) Content(s RawCont) {
