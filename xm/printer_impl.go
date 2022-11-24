@@ -8,6 +8,7 @@ import (
 type printer_impl struct {
 	put          func([]byte)
 	names        []string // stack of tag names, used for closing tags
+	eols         int
 	block_level  int
 	inline_level int
 	inline_mode  bool
@@ -26,6 +27,7 @@ func (p *printer_impl) XmlDecl() {
 		panic("xml writer: invalid XmlDecl placement")
 	}
 	p.put([]byte("<?xml version='1.0' encoding='UTF-8'?>"))
+	p.eols = 1
 }
 
 func (p *printer_impl) Content(s RawCont) {
@@ -33,6 +35,7 @@ func (p *printer_impl) Content(s RawCont) {
 		p.in_tag = false
 		p.put([]byte(">"))
 	} else if !p.inline_mode {
+		p.eols = 1
 		p.putIndent()
 	}
 	p.inline_mode = true
@@ -52,6 +55,7 @@ func (p *printer_impl) Content(s RawCont) {
 			s = s[i+1:]
 			i = bytes.IndexByte(s, '\n')
 			if i < 0 {
+				p.eols = 1
 				p.putIndent()
 				break
 			} else if i == 0 {
@@ -59,6 +63,7 @@ func (p *printer_impl) Content(s RawCont) {
 				// empty lines that only have spaces or tabs before the next '\n'
 				p.put([]byte{'\n'})
 			} else {
+				p.eols = 1
 				p.putIndent()
 			}
 		}
@@ -68,6 +73,7 @@ func (p *printer_impl) Content(s RawCont) {
 
 func (p *printer_impl) Linebreak() {
 	if p.flags&PreserveInlineWhitespace == 0 {
+		p.eols = 1
 		p.putIndent()
 	} else {
 		p.put([]byte{'\n'})
@@ -108,6 +114,7 @@ func (p *printer_impl) OTag(name string) {
 		if p.inline_mode || was_in_tag {
 			p.inline_level++
 		} else {
+			p.eols = 1
 			p.putIndent()
 			p.inline_mode = true
 			p.inline_level++
@@ -115,12 +122,10 @@ func (p *printer_impl) OTag(name string) {
 	} else { // block tag
 		if p.inline_mode {
 			p.inline_mode = false
-			p.putIndent()
-			p.block_level++
-		} else {
-			p.putIndent()
-			p.block_level++
 		}
+		p.eols = 1
+		p.putIndent()
+		p.block_level++
 	}
 
 	p.put([]byte{'<'})
@@ -158,6 +163,7 @@ func (p *printer_impl) CTag() {
 		p.put([]byte("/>"))
 	} else {
 		if !was_inline {
+			p.eols = 1
 			p.putIndent()
 		}
 		p.put([]byte("</"))
@@ -167,6 +173,7 @@ func (p *printer_impl) CTag() {
 }
 
 const (
+	eols_8    = "\n\n\n\n\n\n\n\n"
 	tabs_8    = "\t\t\t\t\t\t\t\t"
 	spaces_16 = "                "
 )
@@ -175,7 +182,13 @@ func (p *printer_impl) putIndent() {
 	if p.indent == IndentNone {
 		return
 	}
-	p.put([]byte{'\n'})
+	for p.eols > 8 {
+		p.put([]byte(eols_8))
+		p.eols -= 8
+	}
+	p.put([]byte(eols_8[:p.eols]))
+	p.eols = 0
+
 	if p.indent == IndentTabs {
 		n := p.block_level
 		for n > 8 {
