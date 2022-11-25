@@ -5,6 +5,12 @@ import (
 	"strings"
 )
 
+type UserType struct{}
+
+func (u UserType) MarshalXM(w Writer) {
+	w.Tag("usertype", Attr("k", "v"), "content")
+}
+
 func ExampleWriter() {
 	buf := strings.Builder{}
 	p := NewPrinter(Indent2Spaces,
@@ -67,8 +73,11 @@ func ExampleWriter() {
 		// funcional content
 		func(sub Writer) {
 			sub.Tag("p", "functional content writing")
-			sub.Tag("p", func(subsub Writer) { subsub.Content("can be nested") })
+			sub.Tag("p", func(subsub Writer) { subsub.Cont("can be nested") })
 		},
+
+		// Marshaler
+		UserType{},
 
 		// low level printing
 		Tag("div", func(p Printer) {
@@ -110,6 +119,7 @@ func ExampleWriter() {
 	//   <div k='v' k2='subfunc'>functional and subfunctional attribute writing</div>
 	//   <p>functional content writing</p>
 	//   <p>can be nested</p>
+	//   <usertype k='v'>content</usertype>
 	//   <div>
 	//     direct raw writing with higher performance
 	//     <p><!--and and flexibility--></p>

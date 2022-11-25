@@ -40,7 +40,7 @@ type AttrWriter interface {
 
 // ContWriter is an interface for writing content between tags.
 type ContWriter interface {
-	Content(...any)
+	Cont(...any)
 }
 
 // TagWriter is an interface for writing XML tags with optional attributes and content.
@@ -58,6 +58,11 @@ type TagWriter interface {
 type Writer interface {
 	ContWriter
 	TagWriter
+}
+
+// Writable allows to customize user types for marshaling into XML content.
+type Marshaler interface {
+	MarshalXM(Writer)
 }
 
 // NewWriter wraps Printer p providing TagWriter API. Notice, that for a valid

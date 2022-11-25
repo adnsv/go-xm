@@ -64,11 +64,13 @@ func (w *writer_impl) Attrs(aa map[string]any) {
 }
 
 // Content implements ContentWriter.Content().
-func (w *writer_impl) Content(args ...any) {
+func (w *writer_impl) Cont(args ...any) {
 	for _, arg := range args {
 		switch a := arg.(type) {
 		case RawCont:
 			w.p.Content(a)
+		case Marshaler:
+			a.MarshalXM(w)
 		case string:
 			w.p.Content(ScrambleCont(a))
 		case func(ContWriter):
@@ -111,7 +113,7 @@ func (w *writer_impl) Tag(name string, args ...any) {
 			// skip attrs
 			continue
 		default:
-			w.Content(a)
+			w.Cont(a)
 		}
 	}
 }
