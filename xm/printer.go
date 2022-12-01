@@ -106,16 +106,17 @@ type Printer interface {
 // document's appearance with automatic indentation.
 type TagKind int
 
-// Accepted values for TagKind:
 const (
+	// Accepted values for TagKind:
 	Block  = TagKind(iota) // block level indentation (default)
 	Inline                 // inline tag
 )
 
-// IndentStyle specifies the indentation in the XML document.
+// IndentStyle configures indentation in the XML document.
 type IndentStyle int
 
 const (
+	// Accepted values for IndentStyle:
 	IndentTabs    = IndentStyle(0)  // each block level starts on a new line, indented with one '\t' per level
 	Indent2Spaces = IndentStyle(2)  // each block level starts on a new line, indented with 2 spaces per level
 	Indent4Spaces = IndentStyle(4)  // each block level starts on a new line, indented with 4 spaces per level
@@ -133,7 +134,6 @@ const (
 // The tagger parameter is a callback that allows to customize indentation for
 // certain tags. If tagger is nil, then all the tags will be treated as block
 // level tags.
-//
 func NewPrinter(indenter IndentStyle, putter func([]byte), tagger func(string) TagKind) Printer {
 	return &printer_impl{
 		put:         putter,
